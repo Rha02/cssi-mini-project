@@ -13,12 +13,26 @@ var io = socket(server);
 
 io.sockets.on('connection', newConnection);
 
+let connections = 0
+let players = new Map();
+
+/** newConnection takes a socket and handles a new connection
+ * @param socket socket*/
 function newConnection(socket) {
     console.log('new connection: ' + socket.id);
+    connections++
 
-    socket.on('mouse', mouseMsg);
+    players[socket.id] = connections
 
-    function mouseMsg(data) {
-        socket.broadcast.emit('mouse', data);
-    }
+    socket.broadcast.emit('processedID', players[socket.id])
+    
+    socket.on('playerMoved', (data) => {
+        socket.broadcast.emit('enemyMoved', data)
+    })
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected: ' + socket.id);
+        players.delete(socket.id)
+        connections--
+    })
 }
